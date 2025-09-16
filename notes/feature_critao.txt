@@ -1,0 +1,282 @@
+Agora vamos criar uma nova funcionalidade.
+Crie uma action chamada critao.js que deve ser acionada por uma mensagem "CRITAO", que não é case sensitive (ou seja, tanto faz se o usuário enviar maiúsculas, minúsculas)
+
+A seguir o bot deve perguntar "Qual o tipo de dano?", e mostrar 4 botões, todos na cor primária:
+Energia, Corte, Perfuração, Esmagamento
+
+Para botões no discord use a seguinte referência:
+@https://discord.com/developers/docs/components/reference#button 
+
+Quando o usuário clicar no botão Energia o custom_id deve ser critao_energia
+Quando o usuário clicar no botão Perfuração o custom_id deve ser critao_perfuracao
+Quando o usuário clicar no botão Esmagamento o custom_id deve ser critao_esmagamento
+Quando o usuário clicar no botão Corte o custom_id deve ser critao_corte
+
+A seguir, quando o bot receber uma instrução vinda de um botão, independente de qual seja o tipo de dano, mas exatamente um dos quatro custom_id citados acima, deve perguntar "Qual o modificador de gravidade?"
+Essa mensagem deve ter 9 botões, sendo 3 botões por linha em 3 linhas, e o texto de cada botão tem um número, variando de -2 até +6.
+O custom_id desses botões deve ser:
+critao_energia_0 quando o usuário selecionar -2
+critao_energia_1 quando o usuário selecionar -1
+critao_energia_2 quando o usuário selecionar 0
+critao_energia_3 quando o usuário selecionar +1
+e assim por diante, até critao_energia_8 quando o usuário selecionar +6
+
+Agora sim, o interpretador tem todos os detalhes para saber qual o tipo de rolagem fazer.
+O padrão completo, nessa última etapa, deve ser critao_TIPO_MOD sendo que o tipo define uma das quatro tabelas de tipos e o MOD define a variação na gravidade a ser definida a seguir.
+
+Finalmente o bot deve primeiro rolar 1d10 para decidir o local em que aconteceu o acerto e comparar com a seguinte sequência
+1 - Perna direita
+2 - Perna esquerda
+3 a 7 - Tronco
+8 - Braço Direito
+9 - Braço Esquerdo
+10 - Cabeça
+
+A seguir deve rolar 1d10 + MOD para definir a gravidade do ferimento, lembrando que MOD é um número que varia de 0 a 8 e a gravidade varia de -2 até 6, portanto, é necessário subtrair 2 do valor que for obtido em MOD.
+
+Finalmente, cada TIPO tem uma tabela correspondente, para cada parte do corpo.
+
+TABELA: Críticos de Energia
+
+Local: Perna Direita ou Esquerda
+Gravidade 1 a 3 Queimaduras leves na perna atingida. 2 pontos de dano em Destreza.
+Gravidade 4 a 6 Queimaduras na perna atingida. 4 pontos de dano em Destreza.
+Gravidade 7 a 8 Queimaduras severas na perna atingida. 6 pontos de dano em Destreza.
+Gravidade 9 a 10 Músculos da perna atingida são carbonizados, congelados ou derretidos. 8 pontos de dano em Destreza. Perna ferida.
+Gravidade 11 a 12 Energia afeta quase todos os músculos, ossos e tendões da perna atingida, transformando-os em uma massa irreconhecível. 8 em Destreza. 2 pontos de dano permanente em Destreza. Perna ferida.
+Gravidade 13+ Perna desintegrada. 8 pontos de dano em Destreza. 2 pontos de dano permanente em Destreza. Perna inutilizada. O alvo cai no chão.
+
+Local: Tronco
+Gravidade 1 a 3 Energia destrói as roupas do alvo. Roupas comuns são desintegradas, armaduras perdem 1d6 pontos de CA. Armaduras que cheguem a um bônus de +0 em CA são destruídas. Uma armadura danificada pode ser consertada com um dia de trabalho e um teste de Ofício (CD igual à CD para construí-la).
+Gravidade 4 a 6 Energia atinge o alvo em cheio, abalando seus órgãos internos. O alvo fica enjoado por 1d4 rodadas.
+Gravidade 7 a 8 Energia engolfa o alvo, afetando seu sistema nervoso e sua coordenação. O alvo fica pasmo por 1d4+1 rodadas.
+Gravidade 9 a 10 Energia atinge o alvo com força, derrubando-o e ferindo seus órgãos internos. O alvo cai no chão e fica exausto até o fim do combate.
+Gravidade 11 a 12 Energia queima, congela ou desintegra boa parte do corpo do alvo, destruindo órgãos internos. 8 pontos de dano de Constituição, 2 pontos de dano permanente em Constituição.
+Gravidade 13+ O alvo é totalmente congelado, carbonizado ou desintegrado. Morte instantânea.
+
+Local: Braço Direito ou Esquerdo
+Gravidade 1 a 3 Queimaduras leves no braço atingido. 2 pontos de dano em Força.
+Gravidade 4 a 6 Queimaduras no braço atingido. 4 pontos de dano em Força.
+Gravidade 7 a 8 Queimaduras severas no braço atingido. 6 pontos de dano em Força.
+Gravidade 9 a 10 Músculos do braço atingido são carbonizados, congelados ou derretidos. 8 pontos de dano em Força. Braço ferido.
+Gravidade 11 a 12 Energia afeta quase todos os músculos, ossos e tendões do membro atingido, transformando-os em uma massa irreconhecível. 8 pontos de dano em Força. 2 pontos de dano permanente em Força. Braço ferido.
+Gravidade 13+ Braço desintegrado. 8 pontos de dano em Força. 2 pontos de dano permanente em Força. Braço inutilizado. Obviamente, o alvo derruba qualquer item que estava segurando com o braço atingido.
+
+Local: Cabeça
+Gravidade 1 a 3 Energia desintegra, queima ou congela os cabelos e barba do alvo. O alvo fica ofuscado por 1d4+1 rodadas. Anões ficam furiosos!
+Gravidade 4 a 6 Energia engolfa a cabeça do alvo, drenando suas forças e deixando cicatrizes menores. 2 pontos de dano em Carisma. O alvo fica fatigado por 1d4+1 rodadas.
+Gravidade 7 a 8 Energia atinge os olhos do alvo e deixa cicatrizes menores. 2 pontos de dano em Carisma e o alvo fica cego por 1d4+1 rodadas.
+Gravidade 9 a 10 Energia atinge o alvo com força, desequilibrando-o e deixando queimaduras e cicatrizes. 2 pontos de dano em Carisma. Alvo cai no chão. Além disso, fica confuso (como o efeito da magia confusão) por 1d4+1 rodadas.
+Gravidade 11 a 12 Energia atinge a cabeça do alvo num ponto vital, penetrando o osso e afetando o cérebro. 2 pontos de dano permanente em Inteligência, Sabedoria e Carisma. Alvo fica atordoado por 1d4+1 rodadas.
+Gravidade 13+ A cabeça do alvo explode em uma cena grotesca. Morte instantânea
+
+
+TABELA: Críticos de Perfuração
+
+Local: Perna Direita ou Esquerda
+Gravidade 1 a 3 Golpe certeiro, perfurando um músculo. 1d4 pontos de dano em Destreza.
+Gravidade 4 a 6 Golpe profundo, perfurando vários músculos. 1d8 pontos de dano em Destreza.
+Gravidade 7 a 8 Golpe cruel, perfurando músculos e tendões. 2d6 pontos de dano em Destreza.
+Gravidade 9 a 10 Golpe perfeito, dilacerando músculos e tendões. 2d6 pontos de dano em Força e Destreza.
+Gravidade 11 a 12 Golpe monumental, atravessando a perna. 2d6 pontos de dano em Força e Destreza. Perna ferida.
+Gravidade 13+ Joelho perfurado. 2d6 pontos de dano em Força e Destreza. Perna inutilizada.
+
+Local: Tronco
+Gravidade 1 a 3 Estocada superfi cial. Sangramento.
+Gravidade 4 a 6 Estocada profunda. Sangramento maior.
+Gravidade 7 a 8 Estocada profunda, um órgão interno atingido. 2 pontos de dano de Constituição. Sangramento maior.
+Gravidade 9 a 10 Estocada profunda, perfurando um órgão interno. 2 pontos de dano de Força, Destreza e Constituição. Sangramento maior.
+Gravidade 11 a 12 Peito trespassado, órgãos internos comprometidos. 4 pontos de dano de Força, Destreza e Constituição. Sangramento maior. Alvo fica indefeso por uma rodada.
+Gravidade 13+ Coração trespassado. Morte instantânea.
+
+Local: Braço Direito ou Esquerdo
+Gravidade 1 a 3 Golpe certeiro, perfurando um músculo importante. 1d4 pontos de dano em Força.
+Gravidade 4 a 6 Golpe profundo, perfurando vários músculos. 1d8 pontos de dano em Força.
+Gravidade 7 a 8 Golpe cruel, perfurando músculos e destruindo tendões. 2d6 pontos de dano em Força.
+Gravidade 9 a 10 Golpe perfeito, dilacerando músculos e tendões. 2d6 pontos de dano em Força e Destreza.
+Gravidade 11 a 12 Golpe terrível, trespassando o ombro. 2d6 pontos de dano em Força e Destreza. Braço ferido.
+Gravidade 13+ Braço trespassado, inutilizando músculos e tendões. 2d6 pontos de dano em Força e Destreza. Braço inutilizado. Obviamente, o alvo derruba qualquer item que estava segurando com o braço atingido.
+
+Local: Cabeça
+Gravidade 1 a 3 Golpe preciso, causando dano cerebral. 2 pontos de dano em Inteligência.
+Gravidade 4 a 6 Corte cruel, provavelmente atingindo áreas superfi ciais do cérebro. 2 pontos de dano em Inteligência. Alvo fica abalado por 1d4 rodadas.
+Gravidade 7 a 8 Golpe macabro, perfurando a bochecha do alvo. 4 pontos de dano em Inteligência. Devido ao furo na bochecha, o alvo não consegue falar direito. Se tentar lançar uma magia, tem 50% de chance de falhar (o talento metamágico Magia Silenciosa ignora esta penalidade). Esta condição dura até o alvo receber uma cura maior.	
+Gravidade 9 a 10 Golpe milimétrico, furando um dos olhos do alvo. O personagem fica cego do olho atingido. Um personagem parcialmente cego sofre 20% de chance de errar qualquer ataque e uma penalidade de –4 em testes de Percepção. Além disso, fica atordoado por uma rodada.
+Gravidade 11 a 12 Golpe perfeito, perfurando o crânio do alvo e atingindo seu cérebro em cheio. 4 pontos de dano permanente de Inteligência. O alvo fica atordoado por 1d4 rodadas.
+Gravidade 13+ Crânio perfurado, golpe atravessa o cérebro. Morte instantânea. O famoso “tiro na cabeça”
+
+TABELA: Críticos de Esmagamento
+
+Local: Perna Direita ou Esquerda
+Gravidade 1 a 3 Pancada certeira, abalando os músculos do alvo. 2 pontos de dano em Destreza.
+Gravidade 4 a 6 Pancada forte, causando uma fratura. 2 pontos de dano em Destreza. O alvo perde a sua próxima ação de movimento.
+Gravidade 7 a 8 Pancada terrível, causando várias fraturas e contrações nos músculos. 4 pontos de dano em Destreza. O deslocamento do alvo é reduzido à metade por um minuto.
+Gravidade 9 a 10 Golpe cruel, quebrando o membro. 4 pontos de dano em Força e Destreza. Perna ferida.
+Gravidade 11 a 12 Golpe devastador, quebrando o membro em vários lugares, ou estraçalhando o joelho. 4 pontos de dano em Força e Destreza. 2 pontos de dano permanente em Destreza. Perna ferida.
+Gravidade 13+ Golpe perfeito. O membro se parte em vários lugares, o osso torna-se uma pasta esbranquiçada. 4 pontos de dano em Força e Destreza. 2 pontos de dano permanente em Destreza. Perna inutilizada. O alvo cai no chão.
+
+Local: Tronco
+Gravidade 1 a 3 Pancada forte, abalando os órgãos internos do alvo. 2 pontos de dano em Constituição.
+Gravidade 4 a 6 Pancada muito forte, causando uma fratura. 2 pontos de dano em Constituição. O alvo é empurrado 1,5m em uma direção à escolha do atacante.
+Gravidade 7 a 8 Pancada terrível, rompendo inúmeros órgãos. 4 pontos de dano em Constituição e o alvo perde sua próxima ação padrão.
+Gravidade 9 a 10 Golpe brutal, quebrando o esterno e várias costelas. 4 pontos de dano em Constituição. Alvo fica enjoado por 1 minuto.
+Gravidade 11 a 12 Golpe assustador. O esterno se quebra, várias costelas se esfacelam, fragmentos de ossos perfuram múltiplos órgãos internos. A saúde do alvo é comprometida para sempre. 4 pontos de dano permanente de Constituição. Alvo fica atordoado por 1 rodada e enjoado por 1 minuto.
+Gravidade 13+ Algo se parte dentro do alvo, perfurando um órg
+
+Local: Perna Direita ou Esquerda
+Gravidade 1 a 3 Pancada certeira, abalando os músculos do alvo. 2 pontos de dano em Destreza.
+Gravidade 4 a 6 Pancada forte, causando uma fratura. 2 pontos de dano em Destreza. O alvo perde a sua próxima ação de movimento.
+Gravidade 7 a 8 Pancada terrível, causando várias fraturas e contrações nos músculos. 4 pontos de dano em Destreza. O deslocamento do alvo é reduzido à metade por um minuto.
+Gravidade 9 a 10 Golpe cruel, quebrando o membro. 4 pontos de dano em Força e Destreza. Perna ferida.
+Gravidade 11 a 12 Golpe devastador, quebrando o membro em vários lugares, ou estraçalhando o joelho. 4 pontos de dano em Força e Destreza. 2 pontos de dano permanente em Destreza. Perna ferida.
+Gravidade 13+ Golpe perfeito. O membro se parte em vários lugares, o osso torna-se uma pasta esbranquiçada. 4 pontos de dano em Força e Destreza. 2 pontos de dano permanente em Destreza. Perna inutilizada. O alvo cai no chão.
+
+Local: Tronco
+Gravidade 1 a 3 Pancada forte, abalando os órgãos internos do alvo. 2 pontos de dano em Constituição.
+Gravidade 4 a 6 Pancada muito forte, causando uma fratura. 2 pontos de dano em Constituição. O alvo é empurrado 1,5m em uma direção à escolha do atacante.
+Gravidade 7 a 8 Pancada terrível, rompendo inúmeros órgãos. 4 pontos de dano em Constituição e o alvo perde sua próxima ação padrão.	
+Gravidade 9 a 10 Golpe brutal, quebrando o esterno e várias costelas. 4 pontos de dano em Constituição. Alvo fica enjoado por 1 minuto.
+Gravidade 11 a 12 Golpe assustador. O esterno se quebra, várias costelas se esfacelam, fragmentos de ossos perfuram múltiplos órgãos internos. A saúde do alvo é comprometida para sempre. 4 pontos de dano permanente de Constituição. Alvo fica atordoado por 1 rodada e enjoado por 1 minuto.
+Gravidade 13+ Algo se parte dentro do alvo, perfurando um órgão vital. Morte instantânea.
+
+Local: Braço Direito ou Esquerdo
+Gravidade 1 a 3 Pancada forte, abalando os músculos do alvo e talvez causando uma fratura. 2 pontos de dano em Força.
+Gravidade 4 a 6 Pancada muito forte, causando uma fratura. 2 pontos de dano em Força. O alvo derruba qualquer item que estava segurando com o braço atingido.
+Gravidade 7 a 8 Pancada terrível, causando várias fraturas e contrações nos músculos. 4 pontos de dano em Força. Na próxima rodada o alvo não pode atacar com o braço atingido.
+Gravidade 9 a 10 Golpe perfeito, quebrando o braço. 4 pontos de dano em Força e Destreza. Braço ferido.
+Gravidade 11 a 12 Golpe devastador, quebrando o membro em vários lugares, ou estraçalhando o cotovelo. 4 pontos de dano em Força e Destreza. 2 pontos de dano permanente em Força. Braço ferido. Dor latejante impõe penalidade de –2 em jogadas e testes por 1 minuto.
+Gravidade 13+ Golpe perfeito. O membro se parte em vários lugares, o osso torna-se uma pasta esbranquiçada. 4 pontos de dano em Força e Destreza. 2 pontos de dano permanente em Força. Braço inutilizado. Obviamente, o alvo derruba qualquer item que estava segurando com o braço atingido.
+
+Local: Cabeça
+Gravidade 1 a 3 Pancada forte, causando tontura. 2 pontos de dano em Sabedoria.
+Gravidade 4 a 6 Pancada muito forte, causando desorientação. 2 pontos de dano em Sabedoria. Alvo fica pasmo por uma rodada.
+Gravidade 4 a 6 Pancada muito forte, causando desorientação. 2 pontos de dano em Sabedoria. Alvo fica pasmo por uma rodada.
+Gravidade 7 a 8 Pancada terrível, causando forte desorientação. 4 pontos de dano em Sabedoria. Alvo fica atordoado uma rodada.
+Gravidade 9 a 10 Golpe certeiro, com força devastadora. 4 pontos de dano em Inteligência e Sabedoria. Alvo fica atordoado por 1d3 rodadas.
+Gravidade 11 a 12 Golpe monstruoso. O crânio do alvo racha, num ferimento horrível. O alvo nunca mais será o mesmo. 4 pontos de dano em Inteligência e Sabedoria. 2 pontos de dano permanente em Inteligência e Sabedoria. Alvo fica atordoado por 1d3 rodadas.
+Gravidade 11 a 12 Golpe monstruoso. O crânio do alvo racha, num ferimento horrível. O alvo nunca mais será o mesmo. 4 pontos de dano em Inteligência e Sabedoria. 2 pontos de dano permanente em Inteligência e Sabedoria. Alvo fica atordoado por 1d3 rodadas.
+Gravidade 13+ O crânio do alvo é esmagado, num golpe brutal. Morte instantânea.
+
+TABELA: Críticos de Corte
+
+Local: Perna Direita ou Esquerda
+Gravidade 1 a 3 Golpe certeiro, cortando um músculo. 2 pontos de dano em Destreza.
+Gravidade 4 a 6 Golpe profundo, cortando vários músculos. 2 pontos de dano em Destreza. O alvo cai no chão.
+Gravidade 7 a 8 Golpe cruel, cortando músculos e tendões. 4 pontos de dano em Destreza. Perna com corte aberto: sempre que o alvo deslocar-se 3m ou mais em uma rodada, sofre 1 ponto de dano de Constituição. Esta condição dura até o alvo receber uma cura menor.
+Gravidade 9 a 10 Golpe perfeito, dilacerando músculos e tendões. 4 pontos de dano em Força e Destreza. Perna ferida.
+Gravidade 11 a 12 Golpe monumental, rasgando uma artéria. 4 pontos de dano em Força e Destreza. Perna ferida. Sangramento maior.
+Gravidade 13+ Perna decepada. 4 pontos de dano em Força e Destreza. Perna inutilizada. Sangramento maior. O alvo cai no chão.
+
+Local: Tronco
+Gravidade 1 a 3 Corte leve mas dolorido no peito. 2 pontos de dano de Constituição.
+Gravidade 4 a 6 Corte moderado na clavícula. 2 pontos de dano em Constituição. Penalidade de –2 nos ataques até o alvo receber uma cura menor.
+Gravidade 7 a 8 Corte grave nas costelas. 4 pontos de dano em Constituição. Penalidade de –2 nos ataques até o alvo receber uma cura maior.
+Gravidade 9 a 10 Estômago aberto, expondo os intestinos. A cada rodada, o alvo deve deixar um braço livre e usar uma ação de movimento para manter as tripas dentro de si. Caso não faça isso, sofre 4 pontos de dano em Constituição. Esta condição dura até o alvo receber uma cura maior.
+Gravidade 11 a 12 Corte profundo no peito, atingindo e expondo órgãos internos. 4 pontos de dano permanente de Constituição. Sangramento maior.
+Gravidade 13+ O alvo é cortado ao meio. Morte instantânea.
+
+Local: Braço Direito ou Esquerdo
+Gravidade 1 a 3 Golpe certeiro, cortando um músculo importante. 2 pontos de dano em Força.
+Gravidade 4 a 6 Golpe profundo, cortando vários músculos. 2 pontos de dano em Força. O alvo derruba qualquer item que estava segurando com o braço atingido.
+Gravidade 7 a 8 Golpe cruel. 4 pontos de dano em Força. Braço com corte aberto: sempre que o alvo realizar um ataque com o braço atingido, sofre 1 ponto de dano de Constituição.
+Gravidade 9 a 10 Golpe perfeito, rasgando inúmeros músculos e tendões. 4 pontos de dano em Força e Destreza. Braço ferido.
+Gravidade 11 a 12 Golpe monumental, atingindo uma artéria. 4 pontos de dano em Força e Destreza. Braço ferido. Sangramento maior.
+Gravidade 13+ Braço decepado. 4 pontos de dano em Força e Destreza. Braço inutilizado. Sangramento maior. Obviamente, o alvo derruba qualquer item que estava segurando com o braço atingido.
+
+Local: Cabeça
+Gravidade 1 a 3 Corte na bochecha. 2 pontos de dano em Carisma.
+Gravidade 4 a 6 Corte no nariz. 2 pontos de dano em Carisma. Sangramento.
+Gravidade 7 a 8 Corte na orelha. 4 pontos de dano em Carisma. Penalidade de –4 em testes de Iniciativa e Percepção.
+Gravidade 9 a 10 Corte na testa. 4 pontos de dano em Carisma. Sangramento maior. Alvo coloca a mão na cabeça, em dor, e fica atordoado por uma rodada.
+Gravidade 11 a 12 Corte na jugular. O alvo perde 20% de seus PV máximos por rodada. Esta condição dura até o alvo receber uma cura maior, ou morrer.
+Gravidade 13+ O alvo é decapitado. Morte instantânea
+
+Assim que identificado qual é o tipo de crítico o bot deve mostrar os efeitos. 
+
+Abaixo um exemplo de como deve ser a mensagem enviada pelo bot ao final do processo considerando um crítico de energia com gravidade +1: 
+Local: 1d10 = (2) = `Perna esquerda`
+Gravidade: 1d10+1 = (6)+1 = 7 
+`Queimaduras severas na perna atingida. 6 pontos de dano em Destreza.`
+
+Agora vou colocar outro exemplo, considerando um crítico de corte com gravidade +3:
+Local: 1d10 = (7) = `Tronco`
+Gravidade: 1d10+3 = (7)+3 = 10
+`Estômago aberto, expondo os intestinos. A cada rodada, o alvo deve deixar um braço livre e usar uma ação de movimento para manter as tripas dentro de si. Caso não faça isso, sofre 4 pontos de dano em Constituição. Esta condição dura até o alvo receber uma cura maior.`
+
+Finalmente um terceiro exemplo, considerando um crítico de perfuração com gravidade -1:
+Local: 1d10 = (10) = `Cabeça`
+Gravidade: 1d10-1 = (3)-1 = 2
+`Golpe preciso, causando dano cerebral. 2 pontos de dano em Inteligência.`
+
+Agora um resumo do comportamento esperado do ponto de vista do usuário:
+O usuário manda a mensagem "critao" (sem as aspas) ou "CRITAO", ou ainda "Critao"
+O bot responde com uma mensagem perguntando qual o tipo de dano e mostrando 4 botões com os tipos de dano: Energia, Esmagamento, Corte e Perfuração
+O usuário clica em um dos botões e o bot responde com uma mensagem perguntando qual o modificador da gravidade do crítico (-2, -1, 0, +1, +2, +3, +4, +5, +6)
+O usuário clica em um dos botões e o bot rola os dois dados e responde com os resultados práticos do acerto crítico
+
+Finalmente, um resumo do ponto de vista das ações a serem implementadas:
+Primeira ação: O bot recebe uma mensagem com o texto "critao" (sem as aspas) ou "CRITAO", ou ainda "Critao". Essa ação é respondida com uma mensagem constante que apenas pergunta qual é o tipo do dano.
+Segunda ação: O bot recebe uma callback indicando que um botão foi clicado, extrai o custom_id do botão e avalia se ele é um dos quatro tipos básicos de dano (critao_corte, critao_energia, critao_esmagamento, critao_perfuração, critao_perfuracao). Essa ação é respondida com uma mensagem fixa que apenas pergunta qual o modificador de gravidade.
+Terceira ação: O bot recebe uma callback indicando que um botão foi clicado, extrai o custom_id do botão e avalia que ele possui um número, no formato: critao_TIPO_MOD e aí finalmente chama a função rollCritao(type, modifier). Essa mensagem é respondida com uma rolagem de acerto crítico equivalente ao que está nos três exemplosa cima.
+
+Requisitos: 
+Será necessário transformar todas as tabelas em um arquivo JSON, gravado numa pasta /baseData, na raiz do repositório, com a seguinte estrutura:
+{
+	"Energia: {
+		"Perna Direita": [
+			"",
+			"Golpe certeiro, cortando um músculo. 2 pontos de dano em Destreza.",
+			"Golpe certeiro, cortando um músculo. 2 pontos de dano em Destreza.",
+			"Golpe certeiro, cortando um músculo. 2 pontos de dano em Destreza.",
+			"Golpe profundo, cortando vários músculos. 2 pontos de dano em Destreza. O alvo cai no chão.",
+			"Golpe profundo, cortando vários músculos. 2 pontos de dano em Destreza. O alvo cai no chão.",
+			"Golpe profundo, cortando vários músculos. 2 pontos de dano em Destreza. O alvo cai no chão.",
+			"Golpe cruel, cortando músculos e tendões. 4 pontos de dano em Destreza. Perna com corte aberto: sempre que o alvo deslocar-se 3m ou mais em uma rodada, sofre 1 ponto de dano de Constituição. Esta condição dura até o alvo receber uma cura menor.",
+			"Golpe cruel, cortando músculos e tendões. 4 pontos de dano em Destreza. Perna com corte aberto: sempre que o alvo deslocar-se 3m ou mais em uma rodada, sofre 1 ponto de dano de Constituição. Esta condição dura até o alvo receber uma cura menor.",
+			"Golpe perfeito, dilacerando músculos e tendões. 4 pontos de dano em Força e Destreza. Perna ferida.",
+			"Golpe perfeito, dilacerando músculos e tendões. 4 pontos de dano em Força e Destreza. Perna ferida.",
+			"Golpe monumental, rasgando uma artéria. 4 pontos de dano em Força e Destreza. Perna ferida. Sangramento maior.",
+			"Golpe monumental, rasgando uma artéria. 4 pontos de dano em Força e Destreza. Perna ferida. Sangramento maior.",
+			"Perna decepada. 4 pontos de dano em Força e Destreza. Perna inutilizada. Sangramento maior. O alvo cai no chão."
+			"Perna decepada. 4 pontos de dano em Força e Destreza. Perna inutilizada. Sangramento maior. O alvo cai no chão."
+			"Perna decepada. 4 pontos de dano em Força e Destreza. Perna inutilizada. Sangramento maior. O alvo cai no chão."
+			"Perna decepada. 4 pontos de dano em Força e Destreza. Perna inutilizada. Sangramento maior. O alvo cai no chão."
+		],
+		"Perna Esquerda": [
+			"",
+			"Golpe certeiro, cortando um músculo. 2 pontos de dano em Destreza.",
+			"Golpe certeiro, cortando um músculo. 2 pontos de dano em Destreza.",
+			"Golpe certeiro, cortando um músculo. 2 pontos de dano em Destreza.",
+			"Golpe profundo, cortando vários músculos. 2 pontos de dano em Destreza. O alvo cai no chão.",
+			"Golpe profundo, cortando vários músculos. 2 pontos de dano em Destreza. O alvo cai no chão.",
+			"Golpe profundo, cortando vários músculos. 2 pontos de dano em Destreza. O alvo cai no chão.",
+			"Golpe cruel, cortando músculos e tendões. 4 pontos de dano em Destreza. Perna com corte aberto: sempre que o alvo deslocar-se 3m ou mais em uma rodada, sofre 1 ponto de dano de Constituição. Esta condição dura até o alvo receber uma cura menor.",
+			"Golpe cruel, cortando músculos e tendões. 4 pontos de dano em Destreza. Perna com corte aberto: sempre que o alvo deslocar-se 3m ou mais em uma rodada, sofre 1 ponto de dano de Constituição. Esta condição dura até o alvo receber uma cura menor.",
+			"Golpe perfeito, dilacerando músculos e tendões. 4 pontos de dano em Força e Destreza. Perna ferida.",
+			"Golpe perfeito, dilacerando músculos e tendões. 4 pontos de dano em Força e Destreza. Perna ferida.",
+			"Golpe monumental, rasgando uma artéria. 4 pontos de dano em Força e Destreza. Perna ferida. Sangramento maior.",
+			"Golpe monumental, rasgando uma artéria. 4 pontos de dano em Força e Destreza. Perna ferida. Sangramento maior.",
+			"Perna decepada. 4 pontos de dano em Força e Destreza. Perna inutilizada. Sangramento maior. O alvo cai no chão."
+			"Perna decepada. 4 pontos de dano em Força e Destreza. Perna inutilizada. Sangramento maior. O alvo cai no chão."
+			"Perna decepada. 4 pontos de dano em Força e Destreza. Perna inutilizada. Sangramento maior. O alvo cai no chão."
+			"Perna decepada. 4 pontos de dano em Força e Destreza. Perna inutilizada. Sangramento maior. O alvo cai no chão."
+		],
+		"Tronco": [
+			"",
+			"Corte leve mas dolorido no peito. 2 pontos de dano de Constituição.",
+			"Corte leve mas dolorido no peito. 2 pontos de dano de Constituição.",
+			"Corte leve mas dolorido no peito. 2 pontos de dano de Constituição.",
+...
+
+ E assim por diante, sendo que: 
+ - A raiz do objeto tem 4 atributos: Energia, Esmagamento, Corte e Perfuração
+ - Cada objeto desses tem 10 sub-objetos, que são os locais onde o dano pode ser aplicado
+ - Cada local é um array sendo que o índice 0 é sempre uma string vazia, e os índices subsequentes são o resultado da rolagem de 1d10 + o modificador de gravidade
+ - O resultado da rolagem de 1d10 + o modificador de gravidade é o índice do array que deve ser usado para buscar o efeito do crítico
+ - O efeito do crítico é a string que está no array na posição do índice encontrado
+ - O array deve ser ordenado de forma crescente, de acordo com o modificador de gravidade
+ - O modificador de gravidade pode ser negativo, positivo ou zero
+ - O modificador de gravidade pode ser um número inteiro entre -2 e +6
+ - O modificador de gravidade pode ser um número decimal entre -2 e +6
+ - O modificador de gravidade pode ser um número decimal entre -2 e +6
+
