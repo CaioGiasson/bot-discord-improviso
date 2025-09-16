@@ -35,11 +35,11 @@ const getLocationFromRoll = function (roll) {
         case 7:
             return "Tronco"
         case 8:
-            return "Braço Direito"
+            return "Braco Direito"
         case 9:
-            return "Braço Esquerdo"
+            return "Braco Esquerdo"
         case 10:
-            return "Cabeça"
+            return "Cabeca"
         default:
             return "Tronco" // fallback
     }
@@ -53,7 +53,7 @@ const createDamageTypeButtons = function () {
     )
 
     const row2 = new ActionRowBuilder().addComponents(
-        new ButtonBuilder().setCustomId("critao_perfuracao").setLabel("Perfuração").setStyle(ButtonStyle.Primary),
+        new ButtonBuilder().setCustomId("critao_perfuracao").setLabel("Perfuracao").setStyle(ButtonStyle.Primary),
         new ButtonBuilder().setCustomId("critao_esmagamento").setLabel("Esmagamento").setStyle(ButtonStyle.Primary)
     )
 
@@ -105,12 +105,16 @@ const rollCritao = function (damageType, modifierIndex, playerName) {
     const severityRoll = rollDice(10)
     const severityTotal = severityRoll + actualModifier
 
-    // Ensure severity is within bounds (1-16)
+    // Ensure severity is within bounds (minimum 1, maximum 16)
+    // If result is < 1, treat as 1; if > 16, treat as 16
     const severityIndex = Math.max(1, Math.min(16, severityTotal))
 
     // Get the critical hit effect from the table
     const damageTypeKey = damageType.charAt(0).toUpperCase() + damageType.slice(1)
     let effect = ""
+
+    // Debug log for JSON lookup
+    console.log(`Buscando no JSON: Tipo="${damageTypeKey}", Local="${location}", Gravidade=${severityIndex}`)
 
     try {
         effect = criticalTables[damageTypeKey][location][severityIndex] || "Efeito não encontrado."
@@ -119,8 +123,7 @@ const rollCritao = function (damageType, modifierIndex, playerName) {
     }
 
     // Format the result message with damage type
-    const damageTypeDisplay = damageTypeKey === "Perfuracao" ? "Perfuração" : damageTypeKey
-    let result = `**${playerName} - Rolagem de acerto crítico de ${damageTypeDisplay}**\n`
+    let result = `**${playerName} - Rolagem de acerto crítico de ${damageTypeKey}**\n`
     result += `Local: 1d10 = ${formatDiceRoll(locationRoll)} = \`${location}\`\n`
 
     if (actualModifier === 0) {
