@@ -1,6 +1,7 @@
 const { Client, GatewayIntentBits } = require("discord.js")
 const { processMessage } = require("./message_router.js")
 const { processCritaoMessage, processCritaoInteraction } = require("./actions/critao.js")
+const { processFalhaCriticaMessage } = require("./actions/falha_critica.js")
 
 require("dotenv").config()
 
@@ -27,6 +28,13 @@ bot.on("messageCreate", (message) => {
     const critaoResponse = processCritaoMessage(message.content, playerName)
     if (critaoResponse) {
         message.reply(critaoResponse)
+        return
+    }
+
+    // Verificar se é um comando FALHA CRÍTICA
+    const falhaCriticaResponse = processFalhaCriticaMessage(message.content, playerName)
+    if (falhaCriticaResponse) {
+        message.reply(falhaCriticaResponse)
         return
     }
 

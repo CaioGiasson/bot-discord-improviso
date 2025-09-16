@@ -1,0 +1,15 @@
+Crie uma nova action chamada falha crítica, que ao ser chamada deve rolar 1d100 e comparar com a seguinte tabela:
+
+O bot deve rolar 1d100 e comparar com a tabela @criticalFailures.json sendo que o índice é o resultado da rolagem.
+
+A mensagem resultante deve ser como: 
+
+**Fulano - Rolagem de falha crítica**
+1d100 = 36
+`Dor de cabeça súbita: penalidade de –4 em testes de Vontade até o fim do combate.`
+
+Ou ainda
+**Fulano - Rolagem de falha crítica**
+1d100 = 99
+`Zupt! A lâmina de sua espada ou machado, cabeça de seu martelo, etc., solta-se e voa para longe. A arma está inutilizada pelo resto do combate. Você deve consertar sua arma para poder usá-la de novo.`
+
