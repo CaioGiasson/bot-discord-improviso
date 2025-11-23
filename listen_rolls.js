@@ -14,15 +14,16 @@ bot.once("ready", () => {
     console.log(`Escutando mensagens...`)
 })
 
-bot.on("messageCreate", (message) => {
+bot.on("messageCreate", async (message) => {
     // Ignora mensagens do próprio bot
     if (message.author.id === bot.user.id) return
 
     // Só interpreta mensagens do canal "dados"
-    if (!message.channel.name.includes("dados")) return
+    if (!message.channel.name.includes("dados") && !message.channel.name.includes("arena")) return
 
     // Obter nome do usuário (nickname se existir, senão username)
     const playerName = message.member?.nickname || message.author.username
+    const playerId = message.author.id // Discord user ID
 
     // Verificar se é um comando CRITAO
     const critaoResponse = processCritaoMessage(message.content, playerName)
@@ -39,7 +40,7 @@ bot.on("messageCreate", (message) => {
     }
 
     // Enviar mensagem para o router e processar rolagens de dados
-    const resultado = processMessage(message.content, playerName)
+    const resultado = await processMessage(message.content, playerName, playerId)
 
     // Se houver resultado válido, responder como reply
     if (resultado) {

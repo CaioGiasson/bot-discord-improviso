@@ -1,3 +1,6 @@
+const PlayerRepository = require("./repositories/Player.repository")
+const RollRepository = require("./repositories/Roll.repository")
+
 const rollDice = function (numDados, ladosDado) {
     const resultados = []
 
@@ -20,179 +23,250 @@ const formatRolls = function (rolls, ladosDado) {
     return `(${formattedRolls.join("+")})`
 }
 
-const processaSingleRoll = function (
+const processaSingleRoll = async function (
     numDados,
     ladosDado,
     modificador,
     rollCommand,
     playerName,
+    playerId,
     numeroRolagem = null,
     textoAdicional = null,
     cdValue = null
 ) {
-    // Rolar os dados
-    const resultados = rollDice(numDados, ladosDado)
+    const playerRepo = new PlayerRepository()
+    const rollRepo = new RollRepository()
 
-    // Calcular soma dos dados
-    const somaDados = resultados.reduce((acc, val) => acc + val, 0)
+    try {
+        // Sync player data (hardcoded DISCORD tenant as requested)
+        await playerRepo.sync({
+            tenant: "DISCORD",
+            playerName: playerName,
+            playerId: playerId
+        })
 
-    // Soma final incluindo modificador
-    const somaFinal = somaDados + modificador
+        // Create initial roll record
+        const rollRecord = await rollRepo.createRoll({
+            tenant: "DISCORD",
+            playerName: playerName,
+            playerId: playerId,
+            rollCommand: rollCommand,
+            textoAdicional: textoAdicional,
+            numeroRolagem: numeroRolagem?.toString(),
+            cdValue: cdValue?.toString()
+        })
 
-    // Formatar resultado
-    let titulo = `${playerName} rolou ${rollCommand}`
-    if (textoAdicional) {
-        titulo += ` - ${textoAdicional}`
-    }
-    if (numeroRolagem) {
-        titulo += ` (Rolagem ${numeroRolagem})`
-    }
+        // Rolar os dados
+        const resultados = rollDice(numDados, ladosDado)
 
-    let resultado = `${titulo}\n`
+        // Calcular soma dos dados (apenas valores aleatórios, sem modificadores)
+        const somaDados = resultados.reduce((acc, val) => acc + val, 0)
 
-    if (modificador === 0) {
-        resultado += `${formatRolls(resultados, ladosDado)}\n**Resultado: ${somaFinal}**`
-    } else {
-        const sinalModificador = modificador > 0 ? " + " : " - "
-        const valorModificador = Math.abs(modificador)
-        resultado += `${formatRolls(resultados, ladosDado)}${sinalModificador}${valorModificador}\n**Resultado: ${somaFinal}**`
-    }
+        // Soma final incluindo modificador
+        const somaFinal = somaDados + modificador
 
-    // Verificar críticos para 1d20
-    if (numDados === 1 && ladosDado === 20) {
-        if (resultados[0] === 1) {
-            resultado += "\n**FALHA CRÍTICA!!!**"
-        } else if (resultados[0] === 20) {
-            resultado += "\n**CRITÃOOOOOOO**"
+        // Formatar resultado
+        let titulo = `${playerName} rolou ${rollCommand}`
+        if (textoAdicional) {
+            titulo += ` - ${textoAdicional}`
         }
-    }
+        if (numeroRolagem) {
+            titulo += ` (Rolagem ${numeroRolagem})`
+        }
 
-    // Verificar CD se especificado
-    if (cdValue !== null) {
-        if (somaFinal >= cdValue) {
-            resultado += "\n**SUCESSO!!!!!!!!!**"
+        let resultado = `${titulo}\n`
+
+        if (modificador === 0) {
+            resultado += `${formatRolls(resultados, ladosDado)}\n**Resultado: ${somaFinal}**`
         } else {
-            resultado += "\n**FALHA**"
+            const sinalModificador = modificador > 0 ? " + " : " - "
+            const valorModificador = Math.abs(modificador)
+            resultado += `${formatRolls(resultados, ladosDado)}${sinalModificador}${valorModificador}\n**Resultado: ${somaFinal}**`
         }
-    }
 
-    return resultado
-}
-
-const processCompoundRoll = function (messageText, playerName) {
-    // Normalizar a mensagem
-    let normalizedMessage = messageText
-
-    // Se começa com "d" (exemplo: "d20+3d6")
-    normalizedMessage = normalizedMessage.replace(/^d(\d)/g, "1d$1")
-
-    // Se "d" está imediatamente após "+" ou "-" (exemplo: "2d10+d6")
-    normalizedMessage = normalizedMessage.replace(/([+-])d(\d)/g, "$11d$2")
-
-    // Extrair texto adicional (tudo após espaço)
-    let textoAdicional = null
-    const textoMatch = normalizedMessage.match(/^([^\s]+)(\s.*)$/)
-    if (textoMatch) {
-        normalizedMessage = textoMatch[1]
-        textoAdicional = textoMatch[2].trim()
-    }
-
-    // Extrair CD do texto adicional
-    let cdValue = null
-    if (textoAdicional) {
-        const cdMatch = textoAdicional.match(/\bCD\s?(\d{1,3})\b/i)
-        if (cdMatch) {
-            cdValue = parseInt(cdMatch[1])
-        }
-    }
-
-    // Quebrar a expressão em partes: dados e modificadores
-    const partsRegex = /([+-]?)(\d+d\d+|\d+)/g
-    const parts = []
-    let match
-
-    while ((match = partsRegex.exec(normalizedMessage)) !== null) {
-        const signal = match[1] || "+"
-        const value = match[2]
-        parts.push({ signal, value })
-    }
-
-    if (parts.length === 0) {
-        return ""
-    }
-
-    // Processar cada parte
-    const resultadosParciais = []
-    const resultadosFormatados = []
-    let somaTotal = 0
-
-    for (let i = 0; i < parts.length; i++) {
-        const part = parts[i]
-        const isNegative = part.signal === "-"
-
-        if (part.value.includes("d")) {
-            // É uma rolagem de dados
-            const diceMatch = part.value.match(/^(\d+)d(\d+)$/)
-            if (!diceMatch) continue
-
-            const numDados = parseInt(diceMatch[1])
-            const ladosDado = parseInt(diceMatch[2])
-
-            // Validações
-            if (numDados < 1 || numDados > 999 || ladosDado < 2 || ladosDado > 100) {
-                continue
+        // Verificar críticos para 1d20
+        if (numDados === 1 && ladosDado === 20) {
+            if (resultados[0] === 1) {
+                resultado += "\n**FALHA CRÍTICA!!!**"
+            } else if (resultados[0] === 20) {
+                resultado += "\n**CRITÃOOOOOOO**"
             }
+        }
 
-            const resultados = rollDice(numDados, ladosDado)
-            const soma = resultados.reduce((acc, val) => acc + val, 0)
-            const somaFinal = isNegative ? -soma : soma
-
-            resultadosParciais.push(somaFinal)
-            somaTotal += somaFinal
-
-            const formattedRoll = formatRolls(resultados, ladosDado)
-            resultadosFormatados.push(isNegative ? `- ${formattedRoll}` : i === 0 ? formattedRoll : `+ ${formattedRoll}`)
-        } else {
-            // É um modificador constante
-            const valor = parseInt(part.value)
-            const valorFinal = isNegative ? -valor : valor
-
-            resultadosParciais.push(valorFinal)
-            somaTotal += valorFinal
-
-            if (i === 0) {
-                resultadosFormatados.push(valor.toString())
+        // Verificar CD se especificado
+        if (cdValue !== null) {
+            if (somaFinal >= cdValue) {
+                resultado += "\n**SUCESSO!!!!!!!!!**"
             } else {
-                resultadosFormatados.push(isNegative ? `- ${valor}` : `+ ${valor}`)
+                resultado += "\n**FALHA**"
             }
         }
+
+        // Update roll record with result message and numeroRolagem (sum of random dice values only)
+        await rollRepo.updateRollResult(rollRecord.id, resultado, somaDados)
+
+        return resultado
+    } catch (error) {
+        console.error("Error in processaSingleRoll:", error)
+        return `Erro ao processar rolagem: ${error.message}`
+    } finally {
+        // Cleanup database connections
+        await playerRepo.disconnect()
+        await rollRepo.disconnect()
     }
-
-    // Formatar resultado final
-    let titulo = `${playerName} rolou ${messageText.split(" ")[0]}`
-    if (textoAdicional) {
-        titulo += ` - ${textoAdicional}`
-    }
-
-    let resultado = `${titulo}\n${resultadosFormatados.join(" ")}\n**Resultado: ${somaTotal}**`
-
-    // Verificar CD se especificado
-    if (cdValue !== null) {
-        if (somaTotal >= cdValue) {
-            resultado += "\n**SUCESSO!!!!!!!!!**"
-        } else {
-            resultado += "\n**FALHA**"
-        }
-    }
-
-    return resultado
 }
 
-const processMessage = function (messageText, playerName) {
+const processCompoundRoll = async function (messageText, playerName, playerId) {
+    const playerRepo = new PlayerRepository()
+    const rollRepo = new RollRepository()
+
+    try {
+        // Sync player data (hardcoded DISCORD tenant as requested)
+        await playerRepo.sync({
+            tenant: "DISCORD",
+            playerName: playerName,
+            playerId: playerId
+        })
+
+        // Normalizar a mensagem
+        let normalizedMessage = messageText
+
+        // Se começa com "d" (exemplo: "d20+3d6")
+        normalizedMessage = normalizedMessage.replace(/^d(\d)/g, "1d$1")
+
+        // Se "d" está imediatamente após "+" ou "-" (exemplo: "2d10+d6")
+        normalizedMessage = normalizedMessage.replace(/([+-])d(\d)/g, "$11d$2")
+
+        // Extrair texto adicional (tudo após espaço)
+        let textoAdicional = null
+        const textoMatch = normalizedMessage.match(/^([^\s]+)(\s.*)$/)
+        if (textoMatch) {
+            normalizedMessage = textoMatch[1]
+            textoAdicional = textoMatch[2].trim()
+        }
+
+        // Extrair CD do texto adicional
+        let cdValue = null
+        if (textoAdicional) {
+            const cdMatch = textoAdicional.match(/\bCD\s?(\d{1,3})\b/i)
+            if (cdMatch) {
+                cdValue = parseInt(cdMatch[1])
+            }
+        }
+
+        // Create initial roll record for compound roll
+        const rollRecord = await rollRepo.createRoll({
+            tenant: "DISCORD",
+            playerName: playerName,
+            playerId: playerId,
+            rollCommand: messageText.split(" ")[0],
+            textoAdicional: textoAdicional,
+            numeroRolagem: null,
+            cdValue: cdValue?.toString()
+        })
+
+        // Quebrar a expressão em partes: dados e modificadores
+        const partsRegex = /([+-]?)(\d+d\d+|\d+)/g
+        const parts = []
+        let match
+
+        while ((match = partsRegex.exec(normalizedMessage)) !== null) {
+            const signal = match[1] || "+"
+            const value = match[2]
+            parts.push({ signal, value })
+        }
+
+        if (parts.length === 0) {
+            return ""
+        }
+
+        // Processar cada parte
+        const resultadosParciais = []
+        const resultadosFormatados = []
+        let somaTotal = 0
+        let somaDadosAleatorios = 0 // Soma apenas dos valores aleatórios dos dados
+
+        for (let i = 0; i < parts.length; i++) {
+            const part = parts[i]
+            const isNegative = part.signal === "-"
+
+            if (part.value.includes("d")) {
+                // É uma rolagem de dados
+                const diceMatch = part.value.match(/^(\d+)d(\d+)$/)
+                if (!diceMatch) continue
+
+                const numDados = parseInt(diceMatch[1])
+                const ladosDado = parseInt(diceMatch[2])
+
+                // Validações
+                if (numDados < 1 || numDados > 999 || ladosDado < 2 || ladosDado > 100) {
+                    continue
+                }
+
+                const resultados = rollDice(numDados, ladosDado)
+                const soma = resultados.reduce((acc, val) => acc + val, 0)
+                const somaFinal = isNegative ? -soma : soma
+
+                // Adicionar à soma dos dados aleatórios (sempre positivo, pois é apenas o valor dos dados)
+                somaDadosAleatorios += soma
+
+                resultadosParciais.push(somaFinal)
+                somaTotal += somaFinal
+
+                const formattedRoll = formatRolls(resultados, ladosDado)
+                resultadosFormatados.push(isNegative ? `- ${formattedRoll}` : i === 0 ? formattedRoll : `+ ${formattedRoll}`)
+            } else {
+                // É um modificador constante (não conta para numeroRolagem)
+                const valor = parseInt(part.value)
+                const valorFinal = isNegative ? -valor : valor
+
+                resultadosParciais.push(valorFinal)
+                somaTotal += valorFinal
+
+                if (i === 0) {
+                    resultadosFormatados.push(valor.toString())
+                } else {
+                    resultadosFormatados.push(isNegative ? `- ${valor}` : `+ ${valor}`)
+                }
+            }
+        }
+
+        // Formatar resultado final
+        let titulo = `${playerName} rolou ${messageText.split(" ")[0]}`
+        if (textoAdicional) {
+            titulo += ` - ${textoAdicional}`
+        }
+
+        let resultado = `${titulo}\n${resultadosFormatados.join(" ")}\n**Resultado: ${somaTotal}**`
+
+        // Verificar CD se especificado
+        if (cdValue !== null) {
+            if (somaTotal >= cdValue) {
+                resultado += "\n**SUCESSO!!!!!!!!!**"
+            } else {
+                resultado += "\n**FALHA**"
+            }
+        }
+
+        // Update roll record with result message and numeroRolagem (sum of random dice values only)
+        await rollRepo.updateRollResult(rollRecord.id, resultado, somaDadosAleatorios)
+
+        return resultado
+    } catch (error) {
+        console.error("Error in processCompoundRoll:", error)
+        return `Erro ao processar rolagem: ${error.message}`
+    } finally {
+        // Cleanup database connections
+        await playerRepo.disconnect()
+        await rollRepo.disconnect()
+    }
+}
+
+const processMessage = async function (messageText, playerName, playerId) {
     // Verificar se é uma rolagem composta (múltiplas rolagens)
     const diceCount = (messageText.match(/\d*d\d+/g) || []).length
     if (diceCount > 1) {
-        return processCompoundRoll(messageText, playerName)
+        return await processCompoundRoll(messageText, playerName, playerId)
     }
 
     // Normalizar a mensagem: adicionar "1" antes de "d" quando necessário
@@ -252,13 +326,23 @@ const processMessage = function (messageText, playerName) {
 
     // Se é apenas uma rolagem, usar formato original
     if (numRolagens === 1) {
-        return processaSingleRoll(numDados, ladosDado, modificador, rollCommand, playerName, null, textoAdicional, cdValue)
+        return await processaSingleRoll(numDados, ladosDado, modificador, rollCommand, playerName, playerId, null, textoAdicional, cdValue)
     }
 
     // Múltiplas rolagens
     const resultados = []
     for (let i = 1; i <= numRolagens; i++) {
-        const resultado = processaSingleRoll(numDados, ladosDado, modificador, rollCommand, playerName, i, textoAdicional, cdValue)
+        const resultado = await processaSingleRoll(
+            numDados,
+            ladosDado,
+            modificador,
+            rollCommand,
+            playerName,
+            playerId,
+            i,
+            textoAdicional,
+            cdValue
+        )
         resultados.push(resultado)
     }
 
